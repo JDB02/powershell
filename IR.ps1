@@ -1,5 +1,19 @@
 $OutputFile = "C:\temp\$env:computername $(get-date -format 'dd-MMM-yyyy_HH:mm:ss' | ForEach-Object {$_ -replace ':', '_'}).csv"
 
+" "
+" "
+" "
+" "
+
+echo "============================================================================================================"
+echo "============================================================================================================"
+echo "=====================================Powershell Incident Response==========================================="
+echo "=======================================Press CTRL-C to terminate============================================"
+echo "============================================================================================================"
+echo "============================================================================================================"
+
+
+
 echo "Powershell IR Script" | out-file –Append $OutputFile
 
 Set-ExecutionPolicy Unrestricted -force
@@ -112,8 +126,14 @@ Get-WinEvent -LogName System -MaxEvents 100 | where LevelDisplayName -eq error| 
 Echo " Get-DnsClientCache | Select-Object –Property Entry " | out-file -Append $OutputFile
 Get-DnsClientCache | Select-Object -Property Entry | out-file -Append $OutputFile
 
-Echo "TCP Connections and their associated Owning Processes" | out-file -Append $OutputFile
-Get-NetTCPConnection -State Establish | Format-Table –Autosize | out-file -Append $OutputFile
+Echo "Established TCP Connections and their associated Owning Processes" | out-file -Append $OutputFile
+Get-NetTCPConnection| Select LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess, @{n="ProcessName";e={(Get-Process -Id $_.OwningProcess).ProcessName}}, @{n="UserName";e={(Get-Process -Id $_.OwningProcess -IncludeUserName).UserName}}| Where {$_.State -eq"Established"} |FT -autosize -Force | out-file -Append $OutputFile
+
+Echo "Listening TCP Connections and their associated Owning Processes" | out-file -Append $OutputFile
+Get-NetTCPConnection| Select LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess, @{n="ProcessName";e={(Get-Process -Id $_.OwningProcess).ProcessName}}, @{n="UserName";e={(Get-Process -Id $_.OwningProcess -IncludeUserName).UserName}}| Where {$_.State -eq"Listen"} |FT -autosize -Force | out-file -Append $OutputFile
+
+Echo "Bound, TimeWait, & CloseWait TCP Connections and their associated Owning Processes" | out-file -Append $OutputFile
+Get-NetTCPConnection| Select LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess, @{n="ProcessName";e={(Get-Process -Id $_.OwningProcess).ProcessName}}, @{n="UserName";e={(Get-Process -Id $_.OwningProcess -IncludeUserName).UserName}} | Where {$_.State -eq"Bound" -Or $_.State -eq"TimeWait" -Or $_.State -eq"CloseWait" } |FT -autosize -Force  | out-file -Append $OutputFile
 
 
 "===============FILE HASHES==============="
